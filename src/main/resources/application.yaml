@@ -1,0 +1,9 @@
+spring:
+  flyway:
+    enabled: true
+    validate-on-migrate: true
+
+springdoc:
+  swagger-ui:
+    path: /swagger-ui.html
+    enabled: true
