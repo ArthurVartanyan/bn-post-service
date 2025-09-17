@@ -2,6 +2,7 @@ package ru.bank.cosmo.service;
 
 import io.minio.MinioClient;
 import io.minio.PutObjectArgs;
+import io.minio.RemoveObjectArgs;
 import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
 import org.springframework.beans.factory.annotation.Value;
@@ -10,7 +11,6 @@ import org.springframework.web.multipart.MultipartFile;
 import ru.bank.cosmo.model.Post;
 import ru.bank.cosmo.repository.PostRepository;
 
-import java.util.Optional;
 import java.util.UUID;
 
 @Service
@@ -23,37 +23,35 @@ public class PostService {
     private final MinioClient minio;
     private final PostRepository postRepository;
 
-    public Post createPost(Long companyId, String content, String objectKey) {
+    public Long createPost(Long companyId, String content, MultipartFile file) {
+        var objectKey = addImage(file, companyId);
         Post post = new Post();
         post.setCompanyId(companyId);
         post.setContent(content);
         post.setImagePath(objectKey);
-
-        return postRepository.save(post);
+        return postRepository.save(post).getId();
     }
 
-    public Optional<Post> editPost(Long postId, String newContent, String newObjectKey) {
+    public Long editPost(Long postId, Long companyId, String newContent, MultipartFile file) {
         return postRepository.findById(postId).map(post -> {
+            var newObjectKey = addImage(file, companyId);
+            post.setImagePath(newObjectKey);
             post.setContent(newContent);
-
-            if (newObjectKey != null) {
-                post.setImagePath(newObjectKey);
-            }
-
-            return postRepository.save(post);
-        });
+            return postRepository.save(post).getId();
+        }).orElseThrow(() -> new RuntimeException("Поста с таким ИД не существует!"));
     }
 
     public boolean deletePost(Long postId) {
         return postRepository.findById(postId).map(post -> {
+            deleteImage(post.getCompanyId(), post.getImagePath());
             postRepository.delete(post);
             return true;
-        }).orElse(false);
+        }).orElseThrow(() -> new RuntimeException("Поста с таким ИД не существует!"));
     }
 
     @SneakyThrows
-    public String addImage(MultipartFile file, Long companyId) {
-        String objectKey = "logo/companies/" + companyId + "/" +
+    private String addImage(MultipartFile file, Long companyId) {
+        String objectKey = "post/companies/" + companyId + "/" +
                 UUID.randomUUID() + "-" + file.getOriginalFilename();
 
         minio.putObject(
@@ -66,12 +64,14 @@ public class PostService {
         return objectKey;
     }
 
-    public String editImage(String oldObjectKey, MultipartFile newFile, UUID companyId) {
-        deleteImage(oldObjectKey);
-        return addImage(newFile, companyId);
-    }
-
-    public void deleteImage(String objectKey) {
-
+    @SneakyThrows
+    private void deleteImage(Long companyId, String path) {
+        String objectKey = "post/companies/" + companyId + "/" + path;
+        minio.removeObject(
+                RemoveObjectArgs.builder()
+                        .bucket(bucket)
+                        .object(objectKey)
+                        .build()
+        );
     }
 }
