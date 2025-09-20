@@ -34,11 +34,10 @@ public class PostController {
     @PutMapping(value = "/{postId}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<Map<String, Object>> editPost(
             @PathVariable Long postId,
-            @RequestParam Long companyId,
             @RequestParam String content,
             @RequestPart(value = "file", required = false) MultipartFile file) {
 
-        Long updatedPostId = postService.editPost(postId, companyId, content, file);
+        Long updatedPostId = postService.editPost(postId, content, file);
         return ResponseEntity.ok(Map.of("postId", updatedPostId));
     }
 

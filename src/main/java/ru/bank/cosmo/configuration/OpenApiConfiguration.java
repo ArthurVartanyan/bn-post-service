@@ -12,7 +12,7 @@ public class OpenApiConfiguration {
     public OpenAPI customOpenAPI() {
         return new OpenAPI()
                 .info(new Info()
-                        .title("BN Profile Service API")
+                        .title("BN Post Service API")
                         .version("v1")
                         .description("API для управления компаниями, логотипами и контактами"));
     }

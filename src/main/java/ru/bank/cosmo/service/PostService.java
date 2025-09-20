@@ -32,9 +32,9 @@ public class PostService {
         return postRepository.save(post).getId();
     }
 
-    public Long editPost(Long postId, Long companyId, String newContent, MultipartFile file) {
+    public Long editPost(Long postId, String newContent, MultipartFile file) {
         return postRepository.findById(postId).map(post -> {
-            var newObjectKey = addImage(file, companyId);
+            var newObjectKey = addImage(file, post.getCompanyId());
             post.setImagePath(newObjectKey);
             post.setContent(newContent);
             return postRepository.save(post).getId();
@@ -43,7 +43,7 @@ public class PostService {
 
     public boolean deletePost(Long postId) {
         return postRepository.findById(postId).map(post -> {
-            deleteImage(post.getCompanyId(), post.getImagePath());
+            deleteImage(post.getImagePath());
             postRepository.delete(post);
             return true;
         }).orElseThrow(() -> new RuntimeException("Поста с таким ИД не существует!"));
@@ -65,12 +65,11 @@ public class PostService {
     }
 
     @SneakyThrows
-    private void deleteImage(Long companyId, String path) {
-        String objectKey = "post/companies/" + companyId + "/" + path;
+    private void deleteImage(String path) {
         minio.removeObject(
                 RemoveObjectArgs.builder()
                         .bucket(bucket)
-                        .object(objectKey)
+                        .object(path)
                         .build()
         );
     }
