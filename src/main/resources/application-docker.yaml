@@ -4,6 +4,11 @@ spring:
     username: myuser
     password: mypassword
     driver-class-name: org.postgresql.Driver
+  kafka:
+    bootstrap-servers: kafka-broker-1:9092,kafka-broker-2:9092,kafka-broker-3:9092
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.apache.kafka.common.serialization.StringSerializer
 
 minio:
   url: http://minio:9000

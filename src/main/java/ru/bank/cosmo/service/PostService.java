@@ -22,6 +22,7 @@ public class PostService {
 
     private final MinioClient minio;
     private final PostRepository postRepository;
+    private final PostKafkaProducer postKafkaProducer;
 
     public Long createPost(Long companyId, String content, MultipartFile file) {
         var objectKey = addImage(file, companyId);
@@ -29,7 +30,11 @@ public class PostService {
         post.setCompanyId(companyId);
         post.setContent(content);
         post.setImagePath(objectKey);
-        return postRepository.save(post).getId();
+        var postId = postRepository.save(post).getId();
+
+        postKafkaProducer.sendPostCreatedEvent(postId);
+
+        return postId;
     }
 
     public Long editPost(Long postId, String newContent, MultipartFile file) {
