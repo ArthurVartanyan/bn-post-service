@@ -2,12 +2,12 @@ package ru.bank.cosmo.service;
 
 import io.minio.MinioClient;
 import io.minio.PutObjectArgs;
-import io.minio.RemoveObjectArgs;
 import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
+import ru.bank.cosmo.dto.KafkaPostDto;
 import ru.bank.cosmo.model.Post;
 import ru.bank.cosmo.repository.PostRepository;
 
@@ -30,11 +30,11 @@ public class PostService {
         post.setCompanyId(companyId);
         post.setContent(content);
         post.setImagePath(objectKey);
-        var postId = postRepository.save(post).getId();
+        var postDto = new KafkaPostDto(postRepository.save(post).getId(), companyId);
 
-        postKafkaProducer.sendPostCreatedEvent(postId);
+        postKafkaProducer.sendPostCreatedEvent(postDto);
 
-        return postId;
+        return postDto.postId();
     }
 
     public Long editPost(Long postId, String newContent, MultipartFile file) {
@@ -48,8 +48,8 @@ public class PostService {
 
     public boolean deletePost(Long postId) {
         return postRepository.findById(postId).map(post -> {
-            deleteImage(post.getImagePath());
-            postRepository.delete(post);
+            post.setIsDeleted(true);
+            postRepository.save(post);
             return true;
         }).orElseThrow(() -> new RuntimeException("Поста с таким ИД не существует!"));
     }
@@ -67,15 +67,5 @@ public class PostService {
                         .stream(file.getInputStream(), file.getSize(), -1)
                         .build());
         return objectKey;
-    }
-
-    @SneakyThrows
-    private void deleteImage(String path) {
-        minio.removeObject(
-                RemoveObjectArgs.builder()
-                        .bucket(bucket)
-                        .object(path)
-                        .build()
-        );
     }
 }

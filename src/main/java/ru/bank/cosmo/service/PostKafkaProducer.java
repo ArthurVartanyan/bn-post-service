@@ -3,6 +3,7 @@ package ru.bank.cosmo.service;
 import lombok.RequiredArgsConstructor;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
+import ru.bank.cosmo.dto.KafkaPostDto;
 
 @Service
 @RequiredArgsConstructor
@@ -12,7 +13,7 @@ public class PostKafkaProducer {
 
     private static final String TOPIC = "posts-created";
 
-    public void sendPostCreatedEvent(Long postId) {
-        kafkaTemplate.send(TOPIC, postId.toString());
+    public void sendPostCreatedEvent(KafkaPostDto postDto) {
+        kafkaTemplate.send(TOPIC, postDto.toString());
     }
 }

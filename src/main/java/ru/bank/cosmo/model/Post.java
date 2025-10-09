@@ -31,6 +31,8 @@ public class Post {
     @Column(nullable = false)
     private LocalDateTime updatedAt;
 
+    private Boolean isDeleted;
+
     @PrePersist
     public void prePersist() {
         createdAt = LocalDateTime.now();
