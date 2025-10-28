@@ -30,7 +30,7 @@ public class PostService {
         post.setCompanyId(companyId);
         post.setContent(content);
         post.setImagePath(objectKey);
-        var postDto = new KafkaPostDto(postRepository.save(post).getId(), companyId);
+        var postDto = new KafkaPostDto(postRepository.save(post).getId(), companyId, post.getCreatedAt());
 
         postKafkaProducer.sendPostCreatedEvent(postDto);
 

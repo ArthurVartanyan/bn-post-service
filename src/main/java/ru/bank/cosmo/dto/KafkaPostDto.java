@@ -1,4 +1,6 @@
 package ru.bank.cosmo.dto;
 
-public record KafkaPostDto(Long postId, Long companyId) {
+import java.time.LocalDateTime;
+
+public record KafkaPostDto(Long postId, Long companyId, LocalDateTime postCreateAt) {
 }
