@@ -1,9 +1,11 @@
 package ru.bank.cosmo.service;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import io.minio.MinioClient;
 import io.minio.PutObjectArgs;
 import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
@@ -13,6 +15,7 @@ import ru.bank.cosmo.repository.PostRepository;
 
 import java.util.UUID;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class PostService {
@@ -21,17 +24,21 @@ public class PostService {
     private String bucket;
 
     private final MinioClient minio;
+    private final ObjectMapper objectMapper;
     private final PostRepository postRepository;
     private final PostKafkaProducer postKafkaProducer;
 
+    @SneakyThrows
     public Long createPost(Long companyId, String content, MultipartFile file) {
         var objectKey = addImage(file, companyId);
         Post post = new Post();
         post.setCompanyId(companyId);
         post.setContent(content);
         post.setImagePath(objectKey);
-        var postDto = new KafkaPostDto(postRepository.save(post).getId(), companyId, post.getCreatedAt());
-
+        var savedPost = postRepository.save(post);
+        log.info("Saved post entity in PostgreSQL: {}", objectMapper.writeValueAsString(savedPost));
+        var postDto = new KafkaPostDto(savedPost.getId(), savedPost.getCompanyId(), savedPost.getCreatedAt());
+        log.info("PostDTO before add to Kafka: {}", objectMapper.writeValueAsString(postDto));
         postKafkaProducer.sendPostCreatedEvent(postDto);
 
         return postDto.postId();

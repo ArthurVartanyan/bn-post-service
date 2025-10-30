@@ -3,12 +3,14 @@ package ru.bank.cosmo.model;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
+import lombok.ToString;
 
 import java.time.LocalDateTime;
 
 @Getter
 @Setter
 @Entity
+@ToString
 @Table(name = "posts", schema = "public")
 public class Post {
 
